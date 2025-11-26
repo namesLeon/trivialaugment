@@ -199,17 +199,13 @@ def train_and_eval(rank, worldsize, tag, dataroot, test_ratio=0.0, cv_fold=0, re
         if 'model' in data or 'state_dict' in data:
             key = 'model' if 'model' in data else 'state_dict'
             logger.info('checkpoint epoch@%d' % data['epoch'])
-            if C.get().get('load_main_model', False):
-                model.load_state_dict(data[key])
-                #if not isinstance(model, DataParallel):
-                    #model.load_state_dict({k.replace('module.', ''): v for k, v in data[key].items()})
-                #else:
-                    #model.load_state_dict({k if 'module.' in k else 'module.'+k: v for k, v in data[key].items()})
-                optimizer.load_state_dict(data['optimizer'])
-                if data['epoch'] < C.get()['epoch']:
-                    epoch_start = data['epoch'] + 1
-                else:
-                    only_eval = True
+            # Always load model weights from checkpoint (fix for proper resuming/evaluation)
+            model.load_state_dict(data[key])
+            optimizer.load_state_dict(data['optimizer'])
+            if data['epoch'] < C.get()['epoch']:
+                epoch_start = data['epoch'] + 1
+            else:
+                only_eval = True
         else:
             #model.load_state_dict({k: v for k, v in data.items()})
             raise ValueError(f"Wrong format of data in save path: {save_path}.")
@@ -437,7 +433,6 @@ if __name__ == '__main__':
                               join=True)
         else:
             spawn_process(0, 0, None, parse_args())
-        with open(f'/tmp/samshpopt/training_with_portsuffix_{port_suffix}.pkl', 'r') as f:
-            result = pickle.load(f)
+        # Removed broken pickle file reading - not needed for single GPU training
     else:
         spawn_process(None, -1, None, parse_args(), local_rank=args.local_rank)

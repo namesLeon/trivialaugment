@@ -2,7 +2,7 @@ import numpy as np
 import re
 from PIL import ImageOps, ImageEnhance, ImageFilter, Image, ImageDraw
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Union
 
 
@@ -14,13 +14,13 @@ class MinMax:
 
 @dataclass
 class MinMaxVals:
-    shear: MinMax = MinMax(.0, .3)
-    translate: MinMax = MinMax(0, 10)  # different from uniaug: MinMax(0,14.4)
-    rotate: MinMax = MinMax(0, 30)
-    solarize: MinMax = MinMax(0, 256)
-    posterize: MinMax = MinMax(0, 4)  # different from uniaug: MinMax(4,8)
-    enhancer: MinMax = MinMax(.1, 1.9)
-    cutout: MinMax = MinMax(.0, .2)
+    shear: MinMax = field(default_factory=lambda: MinMax(.0, .3))
+    translate: MinMax = field(default_factory=lambda: MinMax(0, 10))  # different from uniaug: MinMax(0,14.4)
+    rotate: MinMax = field(default_factory=lambda: MinMax(0, 30))
+    solarize: MinMax = field(default_factory=lambda: MinMax(0, 256))
+    posterize: MinMax = field(default_factory=lambda: MinMax(0, 4))  # different from uniaug: MinMax(4,8)
+    enhancer: MinMax = field(default_factory=lambda: MinMax(.1, 1.9))
+    cutout: MinMax = field(default_factory=lambda: MinMax(.0, .2))
 
 
 
