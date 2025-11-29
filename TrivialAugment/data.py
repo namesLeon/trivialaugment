@@ -247,25 +247,28 @@ def get_dataloaders(dataset, batch, dataroot, split=0.15, split_idx=0, distribut
         test_sampler = None
         test_train_sampler = None
 
-    # Adaptive num_workers: use environment variable or default (32 for local, 4 for Colab)
+    # Adaptive num_workers: use environment variable or default (32 for local, 2 for Colab)
     default_workers = int(os.environ.get('DATALOADER_WORKERS', '32'))
-    num_train_workers = 0 if distributed else min(default_workers, os.cpu_count() or 32)
+    num_workers = 0 if distributed else min(default_workers, os.cpu_count() or 32)
+    
+    # Use same worker count for all loaders (train and eval)
+    num_eval_workers = 0 if started_with_spawn else num_workers
     
     trainloader = torch.utils.data.DataLoader(
-        total_trainset, batch_size=batch, shuffle=train_sampler is None, num_workers=num_train_workers, pin_memory=True,
+        total_trainset, batch_size=batch, shuffle=train_sampler is None, num_workers=num_workers, pin_memory=True,
         sampler=train_sampler, drop_last=True)
     validloader = torch.utils.data.DataLoader(
-        total_trainset, batch_size=batch, shuffle=False, num_workers=0 if started_with_spawn else 8, pin_memory=True,
+        total_trainset, batch_size=batch, shuffle=False, num_workers=num_eval_workers, pin_memory=True,
         sampler=valid_sampler, drop_last=False)
 
     testloader = torch.utils.data.DataLoader(
-        testset, batch_size=batch, shuffle=False, num_workers=0 if started_with_spawn else 8, pin_memory=True,
+        testset, batch_size=batch, shuffle=False, num_workers=num_eval_workers, pin_memory=True,
         drop_last=False, sampler=test_sampler
     )
     # We use this 'hacky' solution s.t. we do not need to keep the dataset twice in memory.
     test_total_trainset = copy_and_replace_transform(total_trainset, transform_test)
     test_trainloader = torch.utils.data.DataLoader(
-        test_total_trainset, batch_size=batch, shuffle=False, num_workers=0 if started_with_spawn else 8, pin_memory=True,
+        test_total_trainset, batch_size=batch, shuffle=False, num_workers=num_eval_workers, pin_memory=True,
         drop_last=False, sampler=test_train_sampler
     )
     test_trainloader.denorm = lambda x: denormalize(x, dataset_info['mean'], dataset_info['std'])
