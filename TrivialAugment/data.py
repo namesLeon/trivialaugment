@@ -247,8 +247,12 @@ def get_dataloaders(dataset, batch, dataroot, split=0.15, split_idx=0, distribut
         test_sampler = None
         test_train_sampler = None
 
+    # Adaptive num_workers: use environment variable or default (32 for local, 4 for Colab)
+    default_workers = int(os.environ.get('DATALOADER_WORKERS', '32'))
+    num_train_workers = 0 if distributed else min(default_workers, os.cpu_count() or 32)
+    
     trainloader = torch.utils.data.DataLoader(
-        total_trainset, batch_size=batch, shuffle=train_sampler is None, num_workers=0 if distributed else 32, pin_memory=True,
+        total_trainset, batch_size=batch, shuffle=train_sampler is None, num_workers=num_train_workers, pin_memory=True,
         sampler=train_sampler, drop_last=True)
     validloader = torch.utils.data.DataLoader(
         total_trainset, batch_size=batch, shuffle=False, num_workers=0 if started_with_spawn else 8, pin_memory=True,
