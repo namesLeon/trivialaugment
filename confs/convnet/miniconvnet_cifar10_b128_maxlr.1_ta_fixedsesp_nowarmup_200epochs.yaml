@@ -1,11 +1,11 @@
 model:
-  type: wresnet28_2
+  type: miniconvnet
 dataset: cifar10
-aug: ua_fixedsesp
+aug: ta_fixedsesp
 cutout: 16
 batch: 128
 gpus: 1
-epoch: 200
+epoch: 400
 lr: 0.1
 lr_schedule:
   type: 'cosine'

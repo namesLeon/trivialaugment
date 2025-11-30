@@ -1,11 +1,11 @@
 model:
-  type: wresnet28_2
+  type: miniconvnet
 dataset: cifar10
-aug: ta_fixedsesp
+aug: ua_uasesp
 cutout: 16
 batch: 128
 gpus: 1
-epoch: 200
+epoch: 400
 lr: 0.1
 lr_schedule:
   type: 'cosine'
@@ -13,5 +13,5 @@ optimizer:
   type: sgd
   nesterov: True
   decay: 0.0005
-augmentation_search_space: fixed_standard
+augmentation_search_space: uniaug_space
 augmentation_parameter_max: 30
