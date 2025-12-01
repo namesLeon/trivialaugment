@@ -247,29 +247,37 @@ def get_dataloaders(dataset, batch, dataroot, split=0.15, split_idx=0, distribut
         test_sampler = None
         test_train_sampler = None
 
-    # Adaptive num_workers: use environment variable or default (32 for local, 2 for Colab)
-    default_workers = int(os.environ.get('DATALOADER_WORKERS', '32'))
+    # Adaptive num_workers: use environment variable or default
+    # Windows: use 4 workers max (spawn overhead), Linux: use more workers (fork is cheap)
+    import platform
+    if platform.system() == 'Windows':
+        default_workers = int(os.environ.get('DATALOADER_WORKERS', '4'))
+    else:
+        default_workers = int(os.environ.get('DATALOADER_WORKERS', '32'))
     num_workers = 0 if distributed else min(default_workers, os.cpu_count() or 32)
     
     # Use same worker count for all loaders (train and eval)
     num_eval_workers = 0 if started_with_spawn else num_workers
     
+    # Use persistent_workers to avoid respawning workers every epoch (PyTorch 1.7+)
+    persistent_workers = num_workers > 0
+    
     trainloader = torch.utils.data.DataLoader(
         total_trainset, batch_size=batch, shuffle=train_sampler is None, num_workers=num_workers, pin_memory=True,
-        sampler=train_sampler, drop_last=True)
+        sampler=train_sampler, drop_last=True, persistent_workers=persistent_workers)
     validloader = torch.utils.data.DataLoader(
         total_trainset, batch_size=batch, shuffle=False, num_workers=num_eval_workers, pin_memory=True,
-        sampler=valid_sampler, drop_last=False)
+        sampler=valid_sampler, drop_last=False, persistent_workers=num_eval_workers > 0)
 
     testloader = torch.utils.data.DataLoader(
         testset, batch_size=batch, shuffle=False, num_workers=num_eval_workers, pin_memory=True,
-        drop_last=False, sampler=test_sampler
+        drop_last=False, sampler=test_sampler, persistent_workers=num_eval_workers > 0
     )
     # We use this 'hacky' solution s.t. we do not need to keep the dataset twice in memory.
     test_total_trainset = copy_and_replace_transform(total_trainset, transform_test)
     test_trainloader = torch.utils.data.DataLoader(
         test_total_trainset, batch_size=batch, shuffle=False, num_workers=num_eval_workers, pin_memory=True,
-        drop_last=False, sampler=test_train_sampler
+        drop_last=False, sampler=test_train_sampler, persistent_workers=num_eval_workers > 0
     )
     test_trainloader.denorm = lambda x: denormalize(x, dataset_info['mean'], dataset_info['std'])
     return train_sampler, trainloader, validloader, testloader, test_trainloader, dataset_info
