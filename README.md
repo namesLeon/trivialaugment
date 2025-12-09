@@ -9,7 +9,7 @@ pip install -r requirements_updated.txt
 
 Now you should be ready to go. Start a training like so:
 ```
-python -m TrivialAugment.train -c confs/your_chosen_config.yaml --dataroot data --tag EXPERIMENT_NAME --save path/to/your/save/directory
+python -m TrivialAugment.train -c confs/your_chosen_config.yaml --dataroot data --tag EXPERIMENT_NAME --save path/to/your/save/directory/save.pth
 ```
 
 Adding the --save tag will lead do automatically saving checkpoints of your trained model every 20 epochs. In the event of an abrupt stop of the training process, the next training will resume from the last checkpoint.
